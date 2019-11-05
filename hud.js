@@ -17,9 +17,9 @@ var hud = {
             Rm1_Energy: `${room1.energyAvailable}/${room1.energyCapacityAvailable}`,
             Rm1_Ramps: `${wallPercent}%`,
             Construction: Object.keys(Game.constructionSites).length,
-            Harvesters: `${harvesters.length}/${configuration["numHarvester"]}`,
-            Upgraders: `${upgraders.length}/${configuration["numUpgrader"]}`,
-            Builders: `${builders.length}/${configuration["numBuilder"]}`,
+            Harvesters: `${harvesters.length}/${configuration.numCreeps["harvester"]}`,
+            Upgraders: `${upgraders.length}/${configuration.numCreeps["upgrader"]}`,
+            Builders: `${builders.length}/${configuration.numCreeps["builder"]}`,
         }
         
         // Display HUD

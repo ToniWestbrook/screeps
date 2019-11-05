@@ -1,59 +1,57 @@
 
 var behaviorHarvester = {
 
-    run: function(creep) {
-        creep.say("H:" + creep.ticksToLive);
+    run: function() {
+        this.reportInfo();
 
-        // Calculate harvest/service mode
-        if (creep.store.getUsedCapacity() == 0) {
-            creep.memory.mode = "harvest";
+       if ((this.memory.mode != "harvest") && (this.store.getUsedCapacity() == 0)) {
+            this.memory.mode = "harvest";
+            this.reportMode();
+            
         }
-        if (creep.store.getFreeCapacity() == 0) {
-            creep.memory.mode = "service";
+        if ((this.memory.mode != "service") && (this.store.getFreeCapacity() == 0)) {
+            this.memory.mode = "service";
+            this.reportMode();
         }
 
         // Perform operation
-	    if(creep.memory.mode == "harvest") {
-            var sources = creep.room.find(FIND_SOURCES);
-            this.harvestTarget(creep, sources[0]);
-        }
-        else {
+	    if (this.memory.mode == "service") {
+	        // Service home room
+	        if (this.moveHome()) return;
+            
             // Spawn and extensions have highest service priority
-            var targets = creep.room.find(FIND_STRUCTURES, {
+            var targets = this.room.find(FIND_STRUCTURES, {
                     filter: (structure) => {
                         return (structure.structureType == STRUCTURE_EXTENSION || structure.structureType == STRUCTURE_SPAWN) &&
                             structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
                     }
             });
             if(targets.length > 0) {
-                this.serviceTarget(creep, targets[0]);
+                this.serviceTarget(targets[0]);
                 return;
             }
             
             // Service towers next
-            var targets = creep.room.find(FIND_STRUCTURES, {
+            var targets = this.room.find(FIND_STRUCTURES, {
                     filter: (structure) => {
                         return (structure.structureType == STRUCTURE_TOWER) &&
                             structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
                     }
             });
             if(targets.length > 0) {
-                this.serviceTarget(creep, targets[0]);
+                this.serviceTarget(targets[0]);
                 return;
             }
-            
+        }
+        else {
+            // Harvest
+            this.harvestFull();
         }
 	},
 	
-	harvestTarget: function harvestTarget(creep, target) {
-        if(creep.harvest(target) == ERR_NOT_IN_RANGE) {
-            creep.moveTo(target, {visualizePathStyle: {stroke: '#ffaa00'}});
-        }
-	},
-	
-	serviceTarget: function serviceTarget(creep, target) {
-        if(creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-            creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
+	serviceTarget: function serviceTarget(target) {
+        if(this.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+            this.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
         }
 	},
 

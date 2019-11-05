@@ -1,14 +1,5 @@
 // Change behavior: Game.creeps["Upgrader11987251"].memory.behavior = "harvester"
 
-// Setup behaviors
-behaviors = {
-    spawn: require('behavior.spawn'),
-    tower: require('behavior.tower'),
-    harvester: require('behavior.harvester'),
-    upgrader: require('behavior.upgrader'),
-    builder: require('behavior.builder'),
-};
-
 function cleanMemory() {
     for(var name in Memory.creeps) {
         if(!Game.creeps[name]) {
@@ -19,8 +10,13 @@ function cleanMemory() {
 }
 
 module.exports.loop = function () {
+    // Setup prototypes and modules
     configuration = require("configuration");
     hud = require("hud");
+    
+    Object.assign(Spawn.prototype, require('behavior.spawn'));
+    Object.assign(Structure.prototype, require('behavior.structure'));
+    Object.assign(Creep.prototype, require('behavior.creep'));    
     
     // Clean memory periodically
     if (configuration.cleanActive && (Game.time % configuration.cleanInterval == 0)) {
@@ -30,23 +26,15 @@ module.exports.loop = function () {
     // Display HUD
     hud.display();
     
-    // Process spawns
-    for (var name in Game.spawns) {
-        spawn = Game.spawns[name];
-        behaviors["spawn"].run(spawn);
-    }
-    
-    // Process structures with behaviors
-    for (var name in Game.structures) { 
-        structure = Game.structures[name];
-        if (structure.structureType in behaviors) {
-            behaviors[structure.structureType].run(structure);
-        }
-    }
-    
-    // Process creeps
-    for(var name in Game.creeps) {
-        var creep = Game.creeps[name];
-        behaviors[creep.memory.behavior].run(creep);
+    // Add all objects to processing array
+    var objects = [];
+    Object.keys(Game.spawns).forEach(function(key) {objects.push(Game.spawns[key])});
+    Object.keys(Game.structures).forEach(function(key) {objects.push(Game.structures[key])});
+    Object.keys(Game.creeps).forEach(function(key) {objects.push(Game.creeps[key])});
+
+    // Process all objects
+    for (object of objects) {
+        object.setup();
+        object.run();
     }
 }
