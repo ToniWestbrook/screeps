@@ -13,14 +13,19 @@ var behaviorSpawn = {
         
         // Create new creeps if not spawning
         if (!this.spawning && this.memory.cooldown-- <= 0) {
-            for (type of Object.keys(creepBehavior.behaviors)) {
-                var creeps =  _.filter(Game.creeps, (creep) => creep.memory.behavior == type);
+            
+            for (profile of Object.keys(configuration.rooms[this.room.name].creeps)) {
+                // Count number of creeps belonging to this room
+                var creeps = _.filter(Game.creeps, (creep) => 
+                    (creep.memory.profile == profile) && (creep.memory.home == this.room.name));
 
-                if(creeps.length < configuration.numCreeps[type]) {
-                    var newName = this.nameCreep(type);
-                    console.log(`Spawning new ${type}: ${newName}`);
-                    this.spawnCreep(configuration.partsDefault, newName, 
-                        {memory: {behavior: type, home: this.room.name}});
+                // Generate creeps if under max
+                if(creeps.length < configuration.rooms[this.room.name].creeps[profile].count) {
+                    var newName = this.nameCreep(profile);
+                    
+                    console.log(`Spawning new ${profile} in ${this.room.name}: ${newName}`);
+                    this.spawnCreep(configuration.profiles[profile].parts, newName, 
+                        {memory: {profile: profile, home: this.room.name}});
                     this.memory.cooldown = 5;
                     break;
                 }

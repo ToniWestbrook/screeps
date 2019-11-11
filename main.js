@@ -1,5 +1,3 @@
-// Change behavior: Game.creeps["Upgrader11987251"].memory.behavior = "harvester"
-
 function cleanMemory() {
     for(var name in Memory.creeps) {
         if(!Game.creeps[name]) {

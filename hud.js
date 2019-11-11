@@ -1,40 +1,63 @@
 var hud = {
     display: function() {
-        configuration = require("configuration");
-        room1 = Game.rooms[Object.keys(Game.rooms)[0]]
+        var configuration = require("configuration");
+
+        if (!configuration.hudActive) return;
         
-        // Build HUD Info
-        var harvesters = _.filter(Game.creeps, (creep) => creep.memory.behavior == 'harvester');
-        var upgraders = _.filter(Game.creeps, (creep) => creep.memory.behavior == 'upgrader');
-        var builders = _.filter(Game.creeps, (creep) => creep.memory.behavior == 'builder');
-        var gclPercent = Math.round(Game.gcl.progress / Game.gcl.progressTotal * 100);
-        var controllerPercent = Math.round(room1.controller.progress / room1.controller.progressTotal * 100);
-        var wallPercent = Math.round(this.getRampartHealth(room1) * 100);
-        
-        hudInfo = {
-            GCL: `${Game.gcl.level} (${gclPercent}%)`,
-            Rm1_Control: `${room1.controller.level} (${controllerPercent}%)`,
-            Rm1_Energy: `${room1.energyAvailable}/${room1.energyCapacityAvailable}`,
-            Rm1_Ramps: `${wallPercent}%`,
-            Construction: Object.keys(Game.constructionSites).length,
-            Harvesters: `${harvesters.length}/${configuration.numCreeps["harvester"]}`,
-            Upgraders: `${upgraders.length}/${configuration.numCreeps["upgrader"]}`,
-            Builders: `${builders.length}/${configuration.numCreeps["builder"]}`,
-        }
+        // Get HUD content
+        hudRows = this.getHudRows(); 
         
         // Display HUD
         hudWidth = 13;
-        hudHeight = Object.keys(hudInfo).length + 2.5
+        hudHeight = Object.keys(hudRows).length + 3;
         hudX = 49 - hudWidth;
         hudY = 49 - hudHeight;
-        new RoomVisual().rect(hudX, hudY, hudWidth, hudHeight, {stroke: 'green', strokeWidth: 0.2, fill: 'green', opacity: 0.25});
+        new RoomVisual().rect(hudX, hudY, hudWidth, hudHeight, {stroke: 'green', strokeWidth: 0.2, fill: 'green', opacity: 0.20});
         
         posY = hudY + 1.5
-        for (var field in hudInfo) {
-            new RoomVisual().text(`${field.replace("_"," ")}:`, hudX + 1, posY, {color: 'lightgreen', font: 1, align: "left"}); 
-            new RoomVisual().text(`${hudInfo[field]}`, hudX + 8, posY, {color: 'lightgreen', font: 1, align: "left"}); 
-            posY += 1.2
+        for (var row of hudRows) {
+            if (row.length > 0) {
+                new RoomVisual().text(`${row[0]}`, hudX + 1, posY, {color: 'lightgreen', font: 0.9, align: "left"}); 
+                new RoomVisual().text(`${row[1]}`, hudX + 8, posY, {color: 'lightgreen', font: 0.9, align: "left"}); 
+            }
+            else {
+                new RoomVisual().line(hudX, posY - 0.4, hudX + 13, posY - 0.4, {color: 'darkgreen'});
+            }
+            posY += 1.1
         }
+    },
+    
+    getHudRows: function() {
+        var configuration = require("configuration");
+
+        // Global info
+        var hudRows = [];
+        hudRows.push(["GCL:", `${Game.gcl.level} (${Math.round(Game.gcl.progress / Game.gcl.progressTotal * 100)}%)`]);
+        hudRows.push(["Construction:", `${Object.keys(Game.constructionSites).length}`]);
+        hudRows.push([]);
+
+        // Room info
+        for (var roomName of Object.keys(configuration.rooms)) {
+            var room = Game.rooms[roomName];
+            hudRows.push([room.name, ""]);
+            hudRows.push(["   Control:", `${room.controller.level} (${Math.round(room.controller.progress / room.controller.progressTotal * 100)}%)`]);
+            hudRows.push(["   Energy:", `${room.energyAvailable}/${room.energyCapacityAvailable}`]);
+            hudRows.push(["   Ramps:", `${Math.round(this.getRampartHealth(room) * 100)}%`]);
+            //hudRows.push(["   Construct:", `${room.find(FIND_MY_CONSTRUCTION_SITES).length}`]);
+            
+            for (var profile of Object.keys(configuration.rooms[roomName].creeps)) {
+                numCreeps = _.filter(Game.creeps, (creep) => 
+                    (creep.memory.profile == profile) && (creep.memory.home == roomName)).length;
+                totalCreeps = configuration.rooms[roomName].creeps[profile].count;
+                    
+                hudRows.push([`   ${profile}s:`, `${numCreeps}/${totalCreeps}`]);
+            }
+            
+            hudRows.push([]);
+        }
+        hudRows.pop();
+        
+        return hudRows;
     },
     
     getRampartHealth: function(room) {
