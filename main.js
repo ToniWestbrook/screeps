@@ -10,7 +10,9 @@ function cleanMemory() {
 module.exports.loop = function () {
     // Setup prototypes and modules
     configuration = require("configuration");
+    events = require("events");
     hud = require("hud");
+    
     
     Object.assign(Spawn.prototype, require('behavior.spawn'));
     Object.assign(Structure.prototype, require('behavior.structure'));
@@ -20,6 +22,9 @@ module.exports.loop = function () {
     if (configuration.cleanActive && (Game.time % configuration.cleanInterval == 0)) {
         cleanMemory();    
     }
+    
+    // Process events
+    events.run();
     
     // Display HUD
     hud.display();

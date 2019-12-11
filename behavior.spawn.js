@@ -3,30 +3,33 @@ var behaviorSpawn = {
     setup: function() { },
     
     run: function() {
-        var configuration = require("configuration");
+        var globalConfig = require("configuration");
         var creepBehavior = require("behavior.creep");
 
-        // Cooldown necessary as this.spawning not set for 2 ticks
-        if (this.memory.cooldown == null || this.memory.cooldown < 0) {
-            this.memory.cooldown = 0;
+        // Cooldown necessary as this.spawning not set for 2 ticks, and to sync between spawns
+        if (this.room.memory.spawnCool == null || this.room.memory.spawnCool < 0) {
+            this.room.memory.spawnCool = 0;
         }
         
         // Create new creeps if not spawning
-        if (!this.spawning && this.memory.cooldown-- <= 0) {
-            
-            for (profile of Object.keys(configuration.rooms[this.room.name].creeps)) {
+        if (!this.spawning && this.room.memory.spawnCool-- <= 0) {
+            // Lookup each class of creep within room
+            for (var clsName of Object.keys(globalConfig.rooms[this.room.name].creeps)) {
+                // Lookup profile assigned to this class
+                var classConfig = globalConfig.rooms[this.room.name].creeps[clsName];
+
                 // Count number of creeps belonging to this room
                 var creeps = _.filter(Game.creeps, (creep) => 
-                    (creep.memory.profile == profile) && (creep.memory.home == this.room.name));
+                    (creep.memory.cls == clsName) && (creep.memory.home == this.room.name));
 
                 // Generate creeps if under max
-                if(creeps.length < configuration.rooms[this.room.name].creeps[profile].count) {
-                    var newName = this.nameCreep(profile);
+                if(creeps.length < classConfig.count) {
+                    var newName = this.nameCreep(clsName, classConfig);
                     
-                    console.log(`Spawning new ${profile} in ${this.room.name}: ${newName}`);
-                    this.spawnCreep(configuration.profiles[profile].parts, newName, 
-                        {memory: {profile: profile, home: this.room.name}});
-                    this.memory.cooldown = 5;
+                    console.log(`Spawning new ${clsName} in ${this.room.name} (${this.name}): ${newName}`);
+                    this.spawnCreep(globalConfig.profiles[classConfig.profile].parts, newName, 
+                        {memory: {cls: clsName, home: this.room.name}});
+                    this.room.memory.spawnCool = 10;
                     break;
                 }
             }
@@ -45,14 +48,20 @@ var behaviorSpawn = {
 	},
 	
 	// Find next free creep name for given type
-	nameCreep: function(type) {
+	nameCreep: function(cls, classConfig) {
 	    var nextNum = 0;
+	    var base = cls[0];
 	    
-	    while (`${type[0]}${nextNum}` in Game.creeps) {
+	    // Use name if manually specified
+	    if ("name" in classConfig) {
+	        base = classConfig.name;
+	    }
+
+	    while (`${base}${nextNum}` in Game.creeps) {
 	        nextNum++;
 	    }
 	    
-	    return `${type[0]}${nextNum}`;
+	    return `${base}${nextNum}`;
 	}
 };
 

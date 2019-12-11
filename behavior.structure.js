@@ -1,5 +1,7 @@
 var behaviorStructure = {
     behaviors: {
+        factory: require('behavior.factory'),
+        link: require('behavior.link'),
         tower: require('behavior.tower'),
     },
 

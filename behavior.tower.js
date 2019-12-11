@@ -25,26 +25,34 @@ var behaviorTower = {
         }
 
         // Search for structures to repair
-        var structures = this.room.find(FIND_STRUCTURES, 
-            {filter: function(object) {return object.hits / object.hitsMax < this.configStructure.repair}.bind(this)});
+        for (var type of ["repair", "defense"]) {
+            var structures = this.room.find(FIND_STRUCTURES, 
+                {filter: function(object) {
+                    result = (type == "defense") && [STRUCTURE_WALL, STRUCTURE_RAMPART].includes(object.structureType);
+                    result = result || ((type == "repair") && ![STRUCTURE_WALL, STRUCTURE_RAMPART].includes(object.structureType));
+                    hits = (type == "defense") ? object.hits : object.hits / object.hitsMax;
+                    
+                    return result && (hits < this.configStructure[type]);
+                }.bind(this)});
             
-        if (structures.length > 0) {
-            // Find structure with most damage
-            var minHits = 1.0;
-            var minIdx = 0;
-            
-            for (var idx = 0 ; idx < structures.length ; idx++) {
-                curHits = structures[idx].hits / structures[idx].hitsMax;
-                if (curHits < minHits) {
-                    minHits = curHits;
-                    minIdx = idx;
+            if (structures.length > 0) {
+                // Find structure with most damage
+                var minHits = (type == "defense") ? 1e20 : 1.0;
+                var minIdx = 0;
+                
+                for (var idx = 0 ; idx < structures.length ; idx++) {
+                    hits = (type == "defense") ? structures[idx].hits : structures[idx].hits / structures[idx].hitsMax;
+                    if (hits < minHits) {
+                        minHits = hits;
+                        minIdx = idx;
+                    }
                 }
+                
+                // Repair structure
+                this.repair(structures[minIdx]);
+                break;
             }
-            
-            // Repair structure
-            this.repairStructure(structures[minIdx]);
-        }
-        
+        }        
 	},
 	
 	attackHostile: function(target) {
@@ -57,10 +65,6 @@ var behaviorTower = {
 	
 	healCreep: function(target) {
         this.heal(target);
-	},
-	
-	repairStructure: function(target) {
-        this.repair(target);
 	},
 	
 };

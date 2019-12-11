@@ -10,17 +10,14 @@ var behaviorGeneric = {
         else {
             if ((this.memory.mode != "collect") && (this.store.getUsedCapacity() == 0)) {
                 this.memory.mode = "collect";
-                this.reportMode();
-                
             }
             if ((this.memory.mode != "service") && (this.store.getFreeCapacity() == 0)) {
                 this.memory.mode = "service";
-                this.reportMode();
             }
         }        
 
         // All creeps scavenge in collect mode
-        if (this.memory.mode == "collect") this.scavenge()
+        //if (this.memory.mode == "collect") this.scavenge()
         
         // Perform action
         this.action(this.memory.mode);
